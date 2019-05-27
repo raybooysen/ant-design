@@ -32,7 +32,7 @@ const Typography: React.SFC<InternalTypographyProps> = ({
 
       return (
         <Component
-          className={classNames(prefixCls, className)}
+          className={classNames(className, prefixCls)}
           aria-label={ariaLabel}
           ref={setContentRef}
           {...restProps}
