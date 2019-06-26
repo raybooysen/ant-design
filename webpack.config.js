@@ -1,11 +1,12 @@
+/* eslint no-param-reassign: 0 */
 // This config is for building dist files
-const webpack = require('webpack');
 const getWebpackConfig = require('antd-tools/lib/getWebpackConfig');
-const WebpackBar = require('webpackbar');
+const PacktrackerPlugin = require('@packtracker/webpack-plugin');
+
+const { webpack } = getWebpackConfig;
 
 // noParse still leave `require('./locale' + name)` in dist files
-// ignore is better
-// http://stackoverflow.com/q/25384360
+// ignore is better: http://stackoverflow.com/q/25384360
 function ignoreMomentLocale(webpackConfig) {
   delete webpackConfig.module.noParse;
   webpackConfig.plugins.push(new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/));
@@ -29,30 +30,21 @@ function externalMoment(config) {
   };
 }
 
-function usePrettyWebpackBar(config) {
-  // remove old progress plugin.
-  config.plugins = config.plugins
-    .filter((plugin) => {
-      return !(plugin instanceof webpack.ProgressPlugin)
-        && !(plugin instanceof WebpackBar);
-    });
-
-  // use brand new progress bar.
-  config.plugins.push(
-    new WebpackBar({
-      name: '📦  Webpack',
-      minimal: false,
-    })
-  );
-}
-
 const webpackConfig = getWebpackConfig(false);
 if (process.env.RUN_ENV === 'PRODUCTION') {
-  webpackConfig.forEach((config) => {
+  webpackConfig.forEach(config => {
     ignoreMomentLocale(config);
     externalMoment(config);
     addLocales(config);
-    usePrettyWebpackBar(config);
+    // https://docs.packtracker.io/uploading-your-webpack-stats/webpack-plugin
+    config.plugins.push(
+      new PacktrackerPlugin({
+        project_token: '8adbb892-ee4a-4d6f-93bb-a03219fb6778',
+        upload: process.env.CI === 'true',
+        fail_build: true,
+        exclude_assets: name => !['antd.min.js', 'antd.min.css'].includes(name),
+      }),
+    );
   });
 }
 
